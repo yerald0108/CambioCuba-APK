@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "CambioCuba",
+    "slug": "cambiocuba",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cambiocuba.app"
+    },
+    "android": {
+      "package": "com.cambiocuba.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "scheme": "cambiocuba",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CambioCuba necesita acceso a tus fotos para subir documentos de verificación.",
+          "cameraPermission": "CambioCuba necesita acceso a la cámara para tomar fotos de verificación."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

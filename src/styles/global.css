@@ -1,0 +1,9 @@
+/*
+ * CambioCuba — Estilos Globales
+ * NativeWind v4 requiere esta directiva como punto de entrada.
+ * Todos los tokens de diseño están en src/constants/theme.ts
+ * Este archivo solo registra Tailwind y define utilidades globales.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
