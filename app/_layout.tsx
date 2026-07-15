@@ -60,10 +60,10 @@ export default function RootLayout() {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      setUser(data);
+      setUser(data ?? null);
     } catch (err) {
       console.error('[Auth] Error cargando perfil:', err);
       setUser(null);

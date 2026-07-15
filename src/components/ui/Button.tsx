@@ -3,18 +3,19 @@
  *
  * Variantes: primary | secondary | danger | ghost
  * Estados: normal | loading | disabled
- * Incluye haptic feedback en Android.
+ * Incluye haptic feedback.
  */
 
-import React from 'react';
 import {
-  Pressable,
+  TouchableOpacity,
   Text,
   ActivityIndicator,
   View,
+  StyleSheet,
   type PressableProps,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+
 import { Colors } from '@constants/theme';
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
@@ -32,53 +33,78 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   fullWidth?: boolean;
 }
 
-// ─── ESTILOS POR VARIANTE ────────────────────────────────────────────────────
+// ─── ESTILOS ─────────────────────────────────────────────────────────────────
 
-const VARIANT_STYLES: Record<ButtonVariant, {
-  container: object;
-  text: object;
-  pressedOpacity: number;
-}> = {
-  primary: {
-    container: {
-      backgroundColor: Colors.accent,
-      borderWidth: 0,
-    },
-    text: { color: Colors.background },
-    pressedOpacity: 0.85,
+const styles = StyleSheet.create({
+  // Base
+  base: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  secondary: {
-    container: {
-      backgroundColor: Colors.surfaceRaised,
-      borderWidth: 1,
-      borderColor: Colors.borderStrong,
-    },
-    text: { color: Colors.textPrimary },
-    pressedOpacity: 0.7,
+  fullWidth: {
+    alignSelf: 'stretch',
   },
-  danger: {
-    container: {
-      backgroundColor: Colors.dangerMuted,
-      borderWidth: 1,
-      borderColor: Colors.danger,
-    },
-    text: { color: Colors.danger },
-    pressedOpacity: 0.7,
+  // Tamaños
+  sizeSm: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, gap: 6 },
+  sizeMd: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 12, gap: 8 },
+  sizeLg: { paddingVertical: 16, paddingHorizontal: 20, borderRadius: 14, gap: 8 },
+  // Variantes — contenedor
+  variantPrimary: {
+    backgroundColor: Colors.accent,
   },
-  ghost: {
-    container: {
-      backgroundColor: Colors.transparent,
-      borderWidth: 0,
-    },
-    text: { color: Colors.accent },
-    pressedOpacity: 0.6,
+  variantSecondary: {
+    backgroundColor: Colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
   },
+  variantDanger: {
+    backgroundColor: Colors.dangerMuted,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+  },
+  variantGhost: {
+    backgroundColor: 'transparent',
+  },
+  // Variantes — texto
+  textPrimary:   { color: '#FFFFFF' },
+  textSecondary: { color: Colors.textPrimary },
+  textDanger:    { color: Colors.danger },
+  textGhost:     { color: Colors.accent },
+  // Texto base
+  textBase: {
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  textSm: { fontSize: 14 },
+  textMd: { fontSize: 15 },
+  textLg: { fontSize: 16 },
+});
+
+const CONTAINER_STYLE: Record<ButtonVariant, object> = {
+  primary:   styles.variantPrimary,
+  secondary: styles.variantSecondary,
+  danger:    styles.variantDanger,
+  ghost:     styles.variantGhost,
 };
 
-const SIZE_STYLES: Record<ButtonSize, { paddingVertical: number; fontSize: number; borderRadius: number }> = {
-  sm: { paddingVertical: 10, fontSize: 14, borderRadius: 10 },
-  md: { paddingVertical: 14, fontSize: 15, borderRadius: 12 },
-  lg: { paddingVertical: 16, fontSize: 16, borderRadius: 14 },
+const TEXT_STYLE: Record<ButtonVariant, object> = {
+  primary:   styles.textPrimary,
+  secondary: styles.textSecondary,
+  danger:    styles.textDanger,
+  ghost:     styles.textGhost,
+};
+
+const CONTAINER_SIZE: Record<ButtonSize, object> = {
+  sm: styles.sizeSm,
+  md: styles.sizeMd,
+  lg: styles.sizeLg,
+};
+
+const TEXT_SIZE: Record<ButtonSize, object> = {
+  sm: styles.textSm,
+  md: styles.textMd,
+  lg: styles.textLg,
 };
 
 // ─── COMPONENTE ───────────────────────────────────────────────────────────────
@@ -93,70 +119,49 @@ export function Button({
   rightIcon,
   fullWidth = true,
   onPress,
-  ...rest
 }: ButtonProps) {
-  const variantStyle = VARIANT_STYLES[variant];
-  const sizeStyle    = SIZE_STYLES[size];
-  const isDisabled   = disabled || loading;
+  const isDisabled = disabled || loading;
 
-  async function handlePress(e: Parameters<NonNullable<PressableProps['onPress']>>[0]) {
+  async function handlePress() {
     if (isDisabled) return;
-    // Haptic feedback sutil al presionar
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress?.(e);
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Haptics no disponible — ignorar
+    }
+    onPress?.({} as any);
   }
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={handlePress}
       disabled={isDisabled}
-      {...rest}
-      style={({ pressed }) => ({
-        // Layout
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        // Dimensiones
-        width: fullWidth ? '100%' : undefined,
-        paddingVertical: sizeStyle.paddingVertical,
-        paddingHorizontal: 20,
-        borderRadius: sizeStyle.borderRadius,
-        // Colores de variante
-        ...variantStyle.container,
-        // Estado deshabilitado
-        opacity: isDisabled ? 0.45 : pressed ? variantStyle.pressedOpacity : 1,
-      })}
+      activeOpacity={0.8}
+      style={[
+        styles.base,
+        CONTAINER_STYLE[variant],
+        CONTAINER_SIZE[size],
+        fullWidth && styles.fullWidth,
+        isDisabled && { opacity: 0.45 },
+      ]}
     >
       {/* Icono izquierdo */}
-      {!loading && leftIcon && (
-        <View>{leftIcon}</View>
-      )}
+      {!loading && leftIcon && <View>{leftIcon}</View>}
 
       {/* Spinner o texto */}
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? Colors.background : Colors.accent}
+          color={variant === 'primary' ? '#FFFFFF' : Colors.accent}
         />
       ) : (
-        <Text
-          style={{
-            fontSize: sizeStyle.fontSize,
-            fontWeight: '600',
-            letterSpacing: 0.2,
-            ...variantStyle.text,
-          }}
-          numberOfLines={1}
-        >
+        <Text style={[styles.textBase, TEXT_STYLE[variant], TEXT_SIZE[size]]} numberOfLines={1}>
           {label}
         </Text>
       )}
 
       {/* Icono derecho */}
-      {!loading && rightIcon && (
-        <View>{rightIcon}</View>
-      )}
-    </Pressable>
+      {!loading && rightIcon && <View>{rightIcon}</View>}
+    </TouchableOpacity>
   );
 }
