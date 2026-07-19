@@ -33,23 +33,8 @@ export function PhotoPicker({
 }: PhotoPickerProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  // ─── Abrir selector ───────────────────────────────────────────────────────
-
-  function showOptions() {
-    if (disabled) return;
-
-    Alert.alert(
-      label,
-      'Elige cómo quieres agregar la foto',
-      [
-        { text: 'Cámara',   onPress: () => pickImage('camera') },
-        { text: 'Galería',  onPress: () => pickImage('gallery') },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
-  }
-
   async function pickImage(source: 'camera' | 'gallery') {
+    if (disabled) return;
     setIsLoading(true);
 
     try {
@@ -154,7 +139,7 @@ export function PhotoPicker({
 
           {/* Botón de cambiar */}
           <Pressable
-            onPress={showOptions}
+            onPress={() => pickImage('gallery')}
             style={({ pressed }) => ({
               position: 'absolute',
               bottom: 8,
@@ -178,70 +163,95 @@ export function PhotoPicker({
   // ─── UI: sin imagen (zona de carga) ──────────────────────────────────────
 
   return (
-    <View>
+    <View style={{ gap: 8 }}>
+      {/* Etiqueta */}
       <Text style={{
         color: Colors.textSecondary,
         fontSize: 13,
         fontWeight: '500',
-        marginBottom: 8,
       }}>
         {label}
       </Text>
 
-      <Pressable
-        onPress={showOptions}
-        disabled={disabled || isLoading}
-        style={({ pressed }) => ({
-          width: '100%',
-          height: 140,
-          borderRadius: BorderRadius.xl,
-          borderWidth: 1.5,
-          borderStyle: 'dashed',
-          borderColor: disabled ? Colors.border : Colors.borderStrong,
-          backgroundColor: Colors.surface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          opacity: pressed ? 0.7 : 1,
-        })}
-      >
+      {/* Contenedor con borde punteado */}
+      <View style={{
+        borderRadius: BorderRadius.xl,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        borderColor: disabled ? Colors.border : Colors.borderStrong,
+        backgroundColor: Colors.surface,
+        padding: 16,
+        gap: 12,
+      }}>
         {isLoading ? (
-          <ActivityIndicator color={Colors.accent} size="small" />
+          <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+            <ActivityIndicator color={Colors.accent} size="small" />
+          </View>
         ) : (
           <>
-            <View style={{
-              flexDirection: 'row',
-              gap: 16,
-              alignItems: 'center',
-            }}>
-              <View style={{
-                alignItems: 'center',
-                gap: 4,
-              }}>
-                <Camera color={Colors.textMuted} size={22} strokeWidth={1.8} />
-                <Text style={{ color: Colors.textMuted, fontSize: 11 }}>Cámara</Text>
-              </View>
-              <Text style={{ color: Colors.border, fontSize: 18 }}>|</Text>
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <ImageIcon color={Colors.textMuted} size={22} strokeWidth={1.8} />
-                <Text style={{ color: Colors.textMuted, fontSize: 11 }}>Galería</Text>
-              </View>
+            {/* Botones Cámara y Galería como pastillas individuales */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={() => pickImage('camera')}
+                disabled={disabled}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  backgroundColor: Colors.surfaceRaised,
+                  borderRadius: BorderRadius.md,
+                  borderWidth: 1,
+                  borderColor: Colors.border,
+                  paddingVertical: 14,
+                  opacity: pressed ? 0.6 : 1,
+                })}
+              >
+                <Camera color={Colors.textSecondary} size={18} strokeWidth={1.8} />
+                <Text style={{ color: Colors.textSecondary, fontSize: 13, fontWeight: '500' }}>
+                  Cámara
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => pickImage('gallery')}
+                disabled={disabled}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  backgroundColor: Colors.surfaceRaised,
+                  borderRadius: BorderRadius.md,
+                  borderWidth: 1,
+                  borderColor: Colors.border,
+                  paddingVertical: 14,
+                  opacity: pressed ? 0.6 : 1,
+                })}
+              >
+                <ImageIcon color={Colors.textSecondary} size={18} strokeWidth={1.8} />
+                <Text style={{ color: Colors.textSecondary, fontSize: 13, fontWeight: '500' }}>
+                  Galería
+                </Text>
+              </Pressable>
             </View>
 
+            {/* Descripción debajo de los botones */}
             {description && (
               <Text style={{
                 color: Colors.textMuted,
                 fontSize: 12,
                 textAlign: 'center',
-                paddingHorizontal: 16,
-                lineHeight: 16,
+                lineHeight: 17,
               }}>
                 {description}
               </Text>
             )}
           </>
         )}
-      </Pressable>
+      </View>
     </View>
   );
 }

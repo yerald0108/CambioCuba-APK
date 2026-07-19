@@ -10,6 +10,7 @@ import { View, Text, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { LayoutGrid, ShieldAlert, Plus } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOffers } from '@hooks/useOffers';
 import { useAuth } from '@hooks/useAuth';
@@ -22,6 +23,7 @@ import { Colors, Spacing } from '@constants/theme';
 import type { Offer } from '@/types/offer.types';
 
 export default function MarketplaceScreen() {
+  const insets = useSafeAreaInsets();
   const { hasBasicKyc, isTrapichero } = useAuth();
   const {
     offers,
@@ -34,7 +36,6 @@ export default function MarketplaceScreen() {
     hasActiveFilters,
   } = useOffers();
 
-  // ── Navegar al detalle de la oferta ───────────────────────────────────────
   function handleOfferPress(offer: Offer) {
     router.push(`/(app)/offer/${offer.id}`);
   }
@@ -45,7 +46,8 @@ export default function MarketplaceScreen() {
       {/* ── Header ── */}
       <View style={{
         paddingHorizontal: Spacing.screenPadding,
-        paddingTop: 16, paddingBottom: 14,
+        paddingTop: insets.top + 12,
+        paddingBottom: 14,
         borderBottomWidth: 1, borderBottomColor: Colors.border,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>

@@ -37,7 +37,7 @@ export async function fetchKycDocument(
     .select('*')
     .eq('user_id', userId)
     .eq('level', 'basic')
-    .maybeSingle();   // maybeSingle no falla si no existe (retorna null)
+    .maybeSingle();
 
   if (error) {
     return { data: null, error: 'No se pudo cargar el estado de verificación.' };
@@ -49,48 +49,53 @@ export async function fetchKycDocument(
 // ─── SUBIR IMÁGENES ───────────────────────────────────────────────────────────
 
 /**
- * Sube una imagen al bucket kyc-documents y retorna la URL pública.
- * Ruta en Storage: kyc-documents/{userId}/{filename}
+ * Sube una imagen al bucket kyc-documents usando FormData.
+ *
+ * IMPORTANTE: En React Native no se puede usar fetch() sobre URIs locales
+ * (file:// o content://) porque el fetch nativo no tiene acceso al sistema
+ * de archivos. La solución es construir un FormData con el objeto de archivo
+ * directamente — React Native sabe resolverlo correctamente.
+ *
+ * Ruta en Storage: kyc-documents/{userId}/{filename}.{ext}
  */
 async function uploadKycImage(
   userId: string,
   imageUri: string,
   filename: string
-): Promise<{ url: string | null; error: string | null }> {
+): Promise<{ path: string | null; error: string | null }> {
   try {
-    // Convertir URI local a Blob para subirlo
-    const response = await fetch(imageUri);
-    const blob     = await response.blob();
+    // Extraer la extensión de la URI. Fallback a 'jpg'.
+    const uriParts = imageUri.split('.');
+    const fileExt  = (uriParts[uriParts.length - 1]?.toLowerCase() ?? 'jpg')
+      .split('?')[0];   // eliminar query params si los hay
+    const mimeType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
+    const fullPath = `${userId}/${filename}.${fileExt}`;
 
-    const filePath = `${userId}/${filename}`;
-    const fileExt  = imageUri.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const fullPath = `${filePath}.${fileExt}`;
+    // FormData con el archivo como objeto — React Native lo resuelve nativamente
+    const formData = new FormData();
+    formData.append('file', {
+      uri:  imageUri,
+      name: `${filename}.${fileExt}`,
+      type: mimeType,
+    } as unknown as Blob);
 
     const { error: uploadError } = await supabase.storage
       .from(KYC_BUCKET)
-      .upload(fullPath, blob, {
-        contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
+      .upload(fullPath, formData, {
+        contentType: mimeType,
         upsert: true,   // Sobreescribir si ya existe (para re-envíos)
       });
 
     if (uploadError) {
       console.error('[KYC] Error subiendo imagen:', uploadError);
-      return { url: null, error: `Error subiendo ${filename}` };
+      return { path: null, error: `Error subiendo ${filename}` };
     }
 
-    // Obtener URL firmada (privada — no pública)
-    const { data: signedData, error: signedError } = await supabase.storage
-      .from(KYC_BUCKET)
-      .createSignedUrl(fullPath, 60 * 60 * 24 * 7); // 7 días de validez
-
-    if (signedError || !signedData?.signedUrl) {
-      return { url: null, error: 'No se pudo obtener la URL de la imagen.' };
-    }
-
-    return { url: fullPath, error: null }; // Guardamos el path, no la URL firmada
+    // Retornamos el path en Storage para guardarlo en la BD
+    return { path: fullPath, error: null };
   } catch (err) {
     console.error('[KYC] Error inesperado subiendo imagen:', err);
-    return { url: null, error: 'Error al procesar la imagen. Intenta de nuevo.' };
+    return { path: null, error: 'Error al procesar la imagen. Intenta de nuevo.' };
   }
 }
 
@@ -145,9 +150,9 @@ export async function submitBasicKyc(
     user_id:            userId,
     level:              'basic' as const,
     status:             'pending' as const,
-    id_card_front_url:  front.url,
-    id_card_back_url:   back.url,
-    selfie_with_id_url: selfie.url,
+    id_card_front_url:  front.path,
+    id_card_back_url:   back.path,
+    selfie_with_id_url: selfie.path,
     submitted_at:       new Date().toISOString(),
   };
 
