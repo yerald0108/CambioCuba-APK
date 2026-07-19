@@ -22,11 +22,12 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="offer/[id]"   options={{ presentation: 'card' }} />
-      <Stack.Screen name="offer/create" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="order/[id]"   options={{ presentation: 'card' }} />
-      <Stack.Screen name="kyc/basic"    options={{ presentation: 'card' }} />
-      <Stack.Screen name="kyc/advanced" options={{ presentation: 'card' }} />
+      <Stack.Screen name="offer/[id]"    options={{ presentation: 'card' }} />
+      <Stack.Screen name="offer/create"  options={{ presentation: 'modal' }} />
+      <Stack.Screen name="order/[id]"    options={{ presentation: 'card' }} />
+      <Stack.Screen name="order/create"  options={{ presentation: 'modal' }} />
+      <Stack.Screen name="kyc/basic"     options={{ presentation: 'card' }} />
+      <Stack.Screen name="kyc/advanced"  options={{ presentation: 'card' }} />
     </Stack>
   );
 }

@@ -84,9 +84,7 @@ export default function KycBasicScreen() {
             Tu identidad ha sido verificada exitosamente.{'\n'}
             Ya puedes operar en el marketplace de CambioCuba.
           </Text>
-          <View style={{ width: '100%', marginTop: 8 }}>
-            <Button label="Ir al Marketplace" onPress={() => router.replace('/(app)/(tabs)')} size="lg" />
-          </View>
+          <Button label="Ir al Marketplace" onPress={() => router.replace('/(app)/(tabs)')} size="lg" />
         </View>
       </View>
     );
@@ -138,7 +136,7 @@ export default function KycBasicScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScreenHeader title="Verificación de identidad" subtitle="KYC Básico" showBack />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
 
         {/* Banner de rechazo */}
         {isRejected && (
@@ -194,9 +192,14 @@ export default function KycBasicScreen() {
           </View>
 
           {/* Fotos */}
-          <Text style={{ color: Colors.textPrimary, fontSize: 16, fontWeight: '600' }}>
-            Documentos requeridos
-          </Text>
+          <View style={{ borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 16, marginTop: 4 }}>
+            <Text style={{ color: Colors.textPrimary, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
+              Documentos requeridos
+            </Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 12 }}>
+              Sube las 3 fotos para continuar
+            </Text>
+          </View>
 
           <PhotoPicker
             label="1. Cara frontal del carnet"
