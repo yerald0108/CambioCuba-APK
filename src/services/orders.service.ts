@@ -269,3 +269,29 @@ export async function fetchOrderHistory(
 
   return { data: data as unknown as Order[], error: null };
 }
+
+// ─── CONFIRMAR PAGO RECIBIDO ──────────────────────────────────────────────────
+
+/**
+ * El vendedor confirma que recibió el pago en CUP.
+ * Cambia el estado de la orden a 'completed'.
+ * Solo posible en estado 'buyer_paid'.
+ */
+export async function confirmPaymentReceived(
+  orderId: string
+): Promise<OrderResult<Order>> {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status: 'completed' })
+    .eq('id', orderId)
+    .eq('status', 'buyer_paid')   // Doble check: solo si está en buyer_paid
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Orders] Error confirmando pago:', error);
+    return { data: null, error: 'No se pudo confirmar el pago. Intenta de nuevo.' };
+  }
+
+  return { data: data as Order, error: null };
+}

@@ -23,6 +23,7 @@ import {
   cancelOrder,
   openDispute,
   createOrder,
+  confirmPaymentReceived,
 } from '@services/orders.service';
 import type { Order, CreateOrderForm } from '@/types/order.types';
 
@@ -296,5 +297,30 @@ export function useActiveOrder() {
     activeOrder: data ?? null,
     hasActiveOrder: !!data,
     isLoading,
+  };
+}
+
+// ─── HOOK: CONFIRMAR PAGO RECIBIDO (vendedor) ─────────────────────────────────
+
+/**
+ * El vendedor confirma que recibió el pago en CUP.
+ * Cambia la orden de 'buyer_paid' → 'completed'.
+ */
+export function useConfirmPayment(orderId: string) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () => confirmPaymentReceived(orderId),
+    onSuccess: ({ error }) => {
+      if (error) { notify.error('Error', error); return; }
+      notify.success('¡Intercambio completado!', 'El pago fue confirmado exitosamente.');
+      queryClient.invalidateQueries({ queryKey: QueryKeys.orders.detail(orderId) });
+    },
+    onError: () => notify.error('Error inesperado', 'No se pudo confirmar el pago.'),
+  });
+
+  return {
+    confirmPayment:  mutation.mutate,
+    isConfirmingPay: mutation.isPending,
   };
 }

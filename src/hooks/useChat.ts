@@ -20,6 +20,7 @@ import { notify } from '@stores/notifications.store';
 import {
   fetchMessages,
   sendMessage,
+  sendPaymentProof as sendPaymentProofService,
 } from '@services/chat.service';
 import type { ChatMessage } from '@/types/chat.types';
 
@@ -192,15 +193,31 @@ export function useChat(orderId: string) {
     [user?.id]
   );
 
+  // ── Enviar comprobante de pago ────────────────────────────────────────────
+  const proofMutation = useMutation({
+    mutationFn: (imageUri: string) =>
+      sendPaymentProofService(user!.id, orderId, imageUri),
+    onError: () => {
+      notify.error('Error', 'No se pudo enviar el comprobante. Intenta de nuevo.');
+    },
+    onSuccess: ({ error }) => {
+      if (error) { notify.error('Error', error); }
+      // El Realtime actualiza la lista; el trigger de Supabase cambia el estado a buyer_paid
+    },
+  });
+
   return {
     // Datos
     messages:    messages ?? [],
     isLoading,
     isError,
     refetch,
-    // Envío
-    sendMessage: sendMutation.mutate,
-    isSending:   sendMutation.isPending,
+    // Envío de texto
+    sendMessage:      sendMutation.mutate,
+    isSending:        sendMutation.isPending,
+    // Envío de comprobante
+    sendPaymentProof: proofMutation.mutate,
+    isUploadingProof: proofMutation.isPending,
     // Helpers
     isOwnMessage,
     currentUserId: user?.id,

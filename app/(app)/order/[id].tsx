@@ -11,7 +11,7 @@
  * - FAB de acciones (confirmar, cancelar, disputar)
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, Alert, TextInput, Modal,
   ActivityIndicator, Pressable, KeyboardAvoidingView, Platform,
@@ -23,10 +23,12 @@ import {
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useOrderDetail } from '@hooks/useOrder';
+import { useOrderDetail, useConfirmPayment } from '@hooks/useOrder';
+import { RatingModal } from '@components/rating/RatingModal';
 import { useChat } from '@hooks/useChat';
 import { ChatBubble } from '@components/chat/ChatBubble';
 import { ChatInput } from '@components/chat/ChatInput';
+import { PaymentProofBubble } from '@components/chat/PaymentProofBubble';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { ErrorState } from '@components/shared/ErrorState';
@@ -113,8 +115,26 @@ export default function OrderScreen() {
   const {
     messages, isLoading: isChatLoading,
     sendMessage, isSending,
+    sendPaymentProof, isUploadingProof,
     isOwnMessage, listRef,
   } = useChat(id ?? '');
+
+  const { confirmPayment, isConfirmingPay } = useConfirmPayment(id ?? '');
+
+  // ── Modal de calificación ─────────────────────────────────────────────────
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
+  // Disparar el modal cuando la orden se completa
+  useEffect(() => {
+    if (order?.status === 'completed') {
+      const alreadyRated = isBuyer ? order.buyer_rated : order.seller_rated;
+      if (!alreadyRated) {
+        // Pequeño delay para que el usuario vea el estado 'completed' primero
+        const timer = setTimeout(() => setShowRatingModal(true), 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [order?.status, order?.buyer_rated, order?.seller_rated, isBuyer]);
 
   // ── Modales ───────────────────────────────────────────────────────────────
   const [showOrderInfo,    setShowOrderInfo]    = useState(false);
@@ -131,8 +151,20 @@ export default function OrderScreen() {
 
   // ── Render de burbuja ─────────────────────────────────────────────────────
   const renderMessage = useCallback(({ item, index }: { item: ChatMessage; index: number }) => {
+    // Comprobante de pago — burbuja especial
+    if (item.is_payment_proof) {
+      return (
+        <PaymentProofBubble
+          message={item}
+          isSeller={!isBuyer}
+          canConfirm={order?.status === 'buyer_paid'}
+          onConfirm={confirmPayment}
+          isConfirming={isConfirmingPay}
+        />
+      );
+    }
+
     const isOwn = isOwnMessage(item);
-    // Mostrar avatar/nombre solo si el mensaje anterior es de otro remitente
     const prevMessage = index > 0 ? messages[index - 1] : null;
     const showSender  = !prevMessage || prevMessage.sender_id !== item.sender_id;
 
@@ -143,7 +175,7 @@ export default function OrderScreen() {
         showSender={showSender}
       />
     );
-  }, [isOwnMessage, messages]);
+  }, [isOwnMessage, messages, isBuyer, order?.status, confirmPayment, isConfirmingPay]);
 
   // ── Pantalla de carga ──────────────────────────────────────────────────────
   if (isLoading) {
@@ -399,6 +431,9 @@ export default function OrderScreen() {
         onSend={sendMessage}
         isSending={isSending}
         disabled={!isActive}
+        showProofButton={isBuyer && order?.status === 'both_confirmed'}
+        onSendProof={sendPaymentProof}
+        isUploadingProof={isUploadingProof}
       />
 
       {/* ── Modal: Info de la orden ── */}
@@ -534,6 +569,24 @@ export default function OrderScreen() {
           maxLength={500}
         />
       </ConfirmModal>
+      {/* ── Modal de calificación ── */}
+      {order.status === 'completed' && (
+        <RatingModal
+          visible={showRatingModal}
+          orderId={order.id}
+          ratedUserId={isBuyer
+            ? (order as any).seller?.id ?? order.seller_id
+            : (order as any).buyer?.id  ?? order.buyer_id
+          }
+          ratedUserName={isBuyer
+            ? (order as any).seller?.full_name ?? 'Vendedor'
+            : (order as any).buyer?.full_name  ?? 'Comprador'
+          }
+          role={isBuyer ? 'buyer' : 'seller'}
+          onDismiss={() => setShowRatingModal(false)}
+        />
+      )}
+
     </KeyboardAvoidingView>
   );
 }

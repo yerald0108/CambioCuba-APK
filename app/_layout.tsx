@@ -16,6 +16,7 @@ import { queryClient } from '@lib/queryClient';
 import { supabase } from '@lib/supabase';
 import { useAuthStore } from '@stores/auth.store';
 import { NotificationToast } from '@components/shared/NotificationToast';
+import { usePushNotifications } from '@hooks/usePushNotifications';
 import { LoadingScreen } from '@components/shared/LoadingScreen';
 import { Colors } from '@constants/theme';
 
@@ -89,15 +90,28 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <StatusBar style="light" backgroundColor={Colors.background} />
 
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="(admin)" />
-          </Stack>
+          <AppWithNotifications />
 
           <NotificationToast />
         </QueryClientProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
+  );
+}
+
+
+// ─── COMPONENTE INTERNO ───────────────────────────────────────────────────────
+// Separado del RootLayout para tener acceso al QueryClient
+// (usePushNotifications usa useQuery internamente)
+
+function AppWithNotifications() {
+  usePushNotifications();
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(app)" />
+      <Stack.Screen name="(admin)" />
+    </Stack>
   );
 }

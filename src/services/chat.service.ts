@@ -9,7 +9,7 @@
  * El Realtime se gestiona en el hook useChat, no aquí.
  */
 
-import { supabase } from '@lib/supabase';
+import { supabase, PAYMENT_PROOFS_BUCKET } from '@lib/supabase';
 import type { ChatMessage, SendMessageForm } from '@/types/chat.types';
 
 // ─── TIPO DE RETORNO ESTÁNDAR ─────────────────────────────────────────────────
@@ -115,4 +115,81 @@ export async function insertSystemMessage(
   }
 
   return { data: data as ChatMessage, error: null };
+}
+
+// ─── ENVIAR COMPROBANTE DE PAGO ───────────────────────────────────────────────
+
+/**
+ * Sube la imagen del comprobante a Storage y luego inserta el mensaje
+ * con is_payment_proof: true en la tabla messages.
+ *
+ * Flujo:
+ * 1. Sube la imagen a payment-proofs/{orderId}/{timestamp}.{ext}
+ * 2. Obtiene la URL pública
+ * 3. Inserta el mensaje de tipo 'image' con is_payment_proof: true
+ *
+ * El trigger de Supabase escucha este INSERT y cambia el estado de la
+ * orden a 'buyer_paid' automáticamente.
+ */
+export async function sendPaymentProof(
+  senderId: string,
+  orderId: string,
+  imageUri: string
+): Promise<ChatResult<ChatMessage>> {
+  // ── Paso 1: subir imagen ───────────────────────────────────────────────────
+  const uriParts = imageUri.split('.');
+  const fileExt  = (uriParts[uriParts.length - 1]?.toLowerCase() ?? 'jpg').split('?')[0];
+  const mimeType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
+  const fileName = `${Date.now()}.${fileExt}`;
+  const filePath = `${orderId}/${fileName}`;
+
+  const formData = new FormData();
+  formData.append('file', {
+    uri:  imageUri,
+    name: fileName,
+    type: mimeType,
+  } as unknown as Blob);
+
+  const { error: uploadError } = await supabase.storage
+    .from(PAYMENT_PROOFS_BUCKET)
+    .upload(filePath, formData, { contentType: mimeType, upsert: false });
+
+  if (uploadError) {
+    console.error('[Chat] Error subiendo comprobante:', uploadError);
+    return { data: null, error: 'No se pudo subir el comprobante. Intenta de nuevo.' };
+  }
+
+  // ── Paso 2: obtener URL pública ────────────────────────────────────────────
+  const { data: urlData } = supabase.storage
+    .from(PAYMENT_PROOFS_BUCKET)
+    .getPublicUrl(filePath);
+
+  const imageUrl = urlData.publicUrl;
+
+  // ── Paso 3: insertar mensaje ───────────────────────────────────────────────
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      order_id:         orderId,
+      sender_id:        senderId,
+      type:             'image',
+      content:          imageUrl,
+      is_payment_proof: true,
+    })
+    .select(`
+      *,
+      sender:profiles!sender_id (
+        id,
+        full_name,
+        avatar_url
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.error('[Chat] Error insertando mensaje de comprobante:', error);
+    return { data: null, error: 'Imagen subida pero no se pudo registrar el mensaje.' };
+  }
+
+  return { data: data as unknown as ChatMessage, error: null };
 }

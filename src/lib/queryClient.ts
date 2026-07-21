@@ -40,6 +40,18 @@ export const QueryKeys = {
     document: (userId: string) => ['kyc', userId] as const,
   },
 
+  // Notificaciones
+  notifications: {
+    list:   (userId: string) => ['notifications', 'list', userId] as const,
+    unread: (userId: string) => ['notifications', 'unread', userId] as const,
+  },
+
+  // Calificaciones
+  ratings: {
+    byUser: (userId: string) => ['ratings', 'user', userId] as const,
+    byOrder: (orderId: string) => ['ratings', 'order', orderId] as const,
+  },
+
   // Admin
   admin: {
     pendingKyc: ['admin', 'kyc', 'pending'] as const,
