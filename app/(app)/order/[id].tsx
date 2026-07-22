@@ -29,6 +29,7 @@ import { useChat } from '@hooks/useChat';
 import { ChatBubble } from '@components/chat/ChatBubble';
 import { ChatInput } from '@components/chat/ChatInput';
 import { PaymentProofBubble } from '@components/chat/PaymentProofBubble';
+import { OrderCelebration, OrderStatusTransition } from '@components/order/OrderMotion';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { ErrorState } from '@components/shared/ErrorState';
@@ -278,6 +279,7 @@ export default function OrderScreen() {
         }
       >
         {/* Fila de estado */}
+        <OrderStatusTransition status={order.status}>
         <View style={{
           flexDirection: 'row', alignItems: 'center',
           justifyContent: 'space-between',
@@ -295,6 +297,7 @@ export default function OrderScreen() {
           </View>
           <Badge label={statusConfig.label} variant={statusConfig.variant} />
         </View>
+        </OrderStatusTransition>
 
         {/* Timer de cuenta regresiva */}
         {order.status === 'both_confirmed' && secondsLeft !== null && (
@@ -345,6 +348,8 @@ export default function OrderScreen() {
           </View>
         )}
       </OrderHeader>
+
+      <OrderCelebration visible={order.status === 'completed'} />
 
       {/* ── Lista de mensajes ── */}
       {isChatLoading && messages.length === 0 ? (

@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
   User, ShieldCheck, ShieldX, Clock,
-  ChevronRight, LogOut, ArrowUpCircle,
+  ChevronRight, LogOut, ArrowUpCircle, List,
 } from 'lucide-react-native';
 
 import { useAuth } from '@hooks/useAuth';
@@ -140,6 +140,22 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {isTrapichero && (
+          <View style={s.section}>
+            <Text style={s.sectionLabel}>Ofertas</Text>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => router.push('/(app)/offer/manage')} style={s.card}>
+              <View style={[s.cardIcon, { backgroundColor: Colors.accentMuted, borderColor: Colors.accent }]}>
+                <List color={Colors.accent} size={20} strokeWidth={1.8} />
+              </View>
+              <View style={s.cardBody}>
+                <Text style={s.cardTitle}>Gestionar mis ofertas</Text>
+                <Text style={s.cardSub}>Pausa, reactiva o elimina tus publicaciones</Text>
+              </View>
+              <ChevronRight color={Colors.textMuted} size={16} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Cuenta ── */}
         <View style={s.section}>

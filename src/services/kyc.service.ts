@@ -7,6 +7,8 @@
  * - Consulta del estado actual del KYC del usuario
  */
 
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+
 import { supabase, KYC_BUCKET } from '@lib/supabase';
 import type { KycDocument } from '@/types/user.types';
 
@@ -58,24 +60,39 @@ export async function fetchKycDocument(
  *
  * Ruta en Storage: kyc-documents/{userId}/{filename}.{ext}
  */
+/** Reduce el tamaño de subida sin sacrificar la legibilidad de documentos. */
+async function optimizeKycImage(imageUri: string): Promise<string> {
+  try {
+    const context = ImageManipulator.manipulate(imageUri);
+    context.resize({ width: 1600 });
+    const image = await context.renderAsync();
+    const result = await image.saveAsync({
+      compress: 0.72,
+      format: SaveFormat.JPEG,
+    });
+    return result.uri;
+  } catch (error) {
+    // La verificación no debe bloquearse si el dispositivo no puede recomprimir.
+    console.warn('[KYC] No se pudo optimizar la imagen; se subirá el original.', error);
+    return imageUri;
+  }
+}
+
 async function uploadKycImage(
   userId: string,
   imageUri: string,
   filename: string
 ): Promise<{ path: string | null; error: string | null }> {
   try {
-    // Extraer la extensión de la URI. Fallback a 'jpg'.
-    const uriParts = imageUri.split('.');
-    const fileExt  = (uriParts[uriParts.length - 1]?.toLowerCase() ?? 'jpg')
-      .split('?')[0];   // eliminar query params si los hay
-    const mimeType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
-    const fullPath = `${userId}/${filename}.${fileExt}`;
+    const optimizedUri = await optimizeKycImage(imageUri);
+    const mimeType = 'image/jpeg';
+    const fullPath = `${userId}/${filename}.jpg`;
 
     // FormData con el archivo como objeto — React Native lo resuelve nativamente
     const formData = new FormData();
     formData.append('file', {
-      uri:  imageUri,
-      name: `${filename}.${fileExt}`,
+      uri:  optimizedUri,
+      name: `${filename}.jpg`,
       type: mimeType,
     } as unknown as Blob);
 

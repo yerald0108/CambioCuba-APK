@@ -18,6 +18,7 @@ import { OfferCard } from '@components/offer/OfferCard';
 import { OfferFilters } from '@components/offer/OfferFilters';
 import { EmptyState } from '@components/shared/EmptyState';
 import { ErrorState } from '@components/shared/ErrorState';
+import { OfferListSkeleton } from '@components/shared/Skeleton';
 import { Button } from '@components/ui/Button';
 import { Colors, Spacing } from '@constants/theme';
 import type { Offer } from '@/types/offer.types';
@@ -112,7 +113,9 @@ export default function MarketplaceScreen() {
       />
 
       {/* ── Lista de ofertas ── */}
-      {isError ? (
+      {isLoading ? (
+        <OfferListSkeleton />
+      ) : isError ? (
         <ErrorState onRetry={refetch} />
       ) : (
         <FlashList

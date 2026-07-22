@@ -84,10 +84,18 @@ export function usePushNotifications() {
     // Listener: el usuario tocó una notificación (app en fondo o cerrada)
     responseListener.current = ExpoNotifications.addNotificationResponseReceivedListener(
       (response) => {
-        const data = response.notification.request.content.data as Record<string, string>;
+        const data = response.notification.request.content.data as Record<string, unknown>;
         handleNotificationTap(data);
       }
     );
+
+    // La app puede haber sido abierta desde una notificación estando cerrada.
+    ExpoNotifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        handleNotificationTap(response.notification.request.content.data as Record<string, unknown>);
+        ExpoNotifications.clearLastNotificationResponseAsync();
+      }
+    });
 
     // Limpiar listeners al desmontar
     return () => {
@@ -151,15 +159,17 @@ export function usePushNotifications() {
  * Navega a la pantalla correcta según el tipo de notificación.
  * El campo `data` viene del payload de la Edge Function de Supabase.
  */
-function handleNotificationTap(data: Record<string, string>) {
-  if (!data?.type) return;
+function handleNotificationTap(data: Record<string, unknown>) {
+  const type = typeof data?.type === 'string' ? data.type : undefined;
+  const orderId = typeof data?.order_id === 'string' ? data.order_id : undefined;
+  if (!type) return;
 
-  switch (data.type) {
+  switch (type) {
     case 'order':
-      if (data.order_id) {
+      if (orderId) {
         router.push({
           pathname: '/(app)/order/[id]',
-          params: { id: data.order_id },
+          params: { id: orderId },
         });
       }
       break;
@@ -169,10 +179,12 @@ function handleNotificationTap(data: Record<string, string>) {
       break;
 
     case 'chat':
-      if (data.order_id) {
+    case 'dispute':
+      // Las disputas viven dentro del detalle de la orden para los participantes.
+      if (orderId) {
         router.push({
           pathname: '/(app)/order/[id]',
-          params: { id: data.order_id },
+          params: { id: orderId },
         });
       }
       break;

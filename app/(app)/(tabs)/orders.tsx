@@ -17,7 +17,7 @@ import {
 import { useOrderHistory } from '@hooks/useOrder';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge } from '@components/ui/Badge';
-import { LoadingScreen } from '@components/shared/LoadingScreen';
+import { OrderListSkeleton } from '@components/shared/Skeleton';
 import { ErrorState } from '@components/shared/ErrorState';
 import { Colors, Spacing } from '@constants/theme';
 import { formatUSDT, formatCUP, formatRelativeTime } from '@utils/format';
@@ -72,7 +72,7 @@ export default function OrdersScreen() {
   const { orders, activeOrders, historicalOrders, isLoading, isError, refetch } =
     useOrderHistory();
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) return <OrderListSkeleton />;
   if (isError)   return <ErrorState onRetry={refetch} />;
 
   // Combinamos: activos primero, luego histórico, con separadores de sección

@@ -16,6 +16,7 @@ import { queryClient } from '@lib/queryClient';
 import { supabase } from '@lib/supabase';
 import { useAuthStore } from '@stores/auth.store';
 import { NotificationToast } from '@components/shared/NotificationToast';
+import { OfflineBanner } from '@components/shared/OfflineBanner';
 import { usePushNotifications } from '@hooks/usePushNotifications';
 import { LoadingScreen } from '@components/shared/LoadingScreen';
 import { Colors } from '@constants/theme';
@@ -108,10 +109,13 @@ function AppWithNotifications() {
   usePushNotifications();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(app)" />
-      <Stack.Screen name="(admin)" />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+        <Stack.Screen name="(admin)" />
+      </Stack>
+      <OfflineBanner />
+    </>
   );
 }
