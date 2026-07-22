@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
   User, ShieldCheck, ShieldX, Clock,
-  ChevronRight, LogOut, ArrowUpCircle, List,
+  ChevronRight, LogOut, ArrowUpCircle, List, LayoutDashboard,
 } from 'lucide-react-native';
 
 import { useAuth } from '@hooks/useAuth';
@@ -21,7 +21,7 @@ import { Badge } from '@components/ui/Badge';
 import { Colors } from '@constants/theme';
 
 export default function ProfileScreen() {
-  const { user, logout, isTrapichero } = useAuth();
+  const { user, logout, isTrapichero, isAdmin } = useAuth();
   const { kycStatus, isPending, isApproved, isRejected } = useKyc();
   const insets = useSafeAreaInsets();
 
@@ -151,6 +151,22 @@ export default function ProfileScreen() {
               <View style={s.cardBody}>
                 <Text style={s.cardTitle}>Gestionar mis ofertas</Text>
                 <Text style={s.cardSub}>Pausa, reactiva o elimina tus publicaciones</Text>
+              </View>
+              <ChevronRight color={Colors.textMuted} size={16} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isAdmin && (
+          <View style={s.section}>
+            <Text style={s.sectionLabel}>Administración</Text>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => router.replace('/(admin)/dashboard')} style={[s.card, { borderLeftWidth: 3, borderLeftColor: Colors.info }]}>
+              <View style={[s.cardIcon, { backgroundColor: Colors.infoMuted, borderColor: Colors.info }]}>
+                <LayoutDashboard color={Colors.info} size={20} strokeWidth={1.8} />
+              </View>
+              <View style={s.cardBody}>
+                <Text style={s.cardTitle}>Panel de administración</Text>
+                <Text style={s.cardSub}>Volver a moderación y métricas</Text>
               </View>
               <ChevronRight color={Colors.textMuted} size={16} strokeWidth={2} />
             </TouchableOpacity>

@@ -10,16 +10,18 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Users, ArrowLeftRight, ShieldCheck,
-  ShieldAlert, TrendingUp, ChevronRight, RefreshCw,
+  ShieldAlert, TrendingUp, ChevronRight, RefreshCw, Store, LogOut,
 } from 'lucide-react-native';
 
 import { useDashboardStats } from '@hooks/useAdmin';
+import { useAuth } from '@hooks/useAuth';
 import { Colors, Spacing } from '@constants/theme';
 import { formatUSDT } from '@utils/format';
 
 export default function AdminDashboard() {
   const insets = useSafeAreaInsets();
   const { stats, isLoading, refetch } = useDashboardStats();
+  const { logout } = useAuth();
 
   const statCards = [
     {
@@ -73,13 +75,57 @@ export default function AdminDashboard() {
             Dashboard
           </Text>
         </View>
-        <Pressable
-          onPress={() => refetch()}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8 })}
-        >
-          <RefreshCw color={Colors.textSecondary} size={18} strokeWidth={2} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Pressable
+            onPress={() => router.replace('/(app)/(tabs)')}
+            accessibilityRole="button"
+            accessibilityLabel="Usar la aplicación como usuario"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8 })}
+          >
+            <Store color={Colors.accent} size={19} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={() => refetch()}
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar panel"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8 })}
+          >
+            <RefreshCw color={Colors.textSecondary} size={18} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={logout}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar sesión"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8 })}
+          >
+            <LogOut color={Colors.danger} size={19} strokeWidth={2} />
+          </Pressable>
+        </View>
       </View>
+
+      <Pressable
+        onPress={() => router.replace('/(app)/(tabs)')}
+        style={({ pressed }) => ({
+          marginHorizontal: Spacing.screenPadding,
+          marginTop: 14,
+          backgroundColor: Colors.infoMuted,
+          borderWidth: 1,
+          borderColor: Colors.info + '66',
+          borderRadius: 12,
+          padding: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <Store color={Colors.info} size={18} strokeWidth={2} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: Colors.textPrimary, fontSize: 13, fontWeight: '600' }}>Usar CambioCuba como usuario</Text>
+          <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>Ir al mercado, órdenes y perfil sin cerrar tu sesión de administrador.</Text>
+        </View>
+        <ChevronRight color={Colors.info} size={18} strokeWidth={2} />
+      </Pressable>
 
       <ScrollView
         contentContainerStyle={{
