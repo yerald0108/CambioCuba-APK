@@ -45,6 +45,14 @@ export interface NotificationsResult<T = void> {
  */
 export async function registerPushToken(userId: string): Promise<void> {
   try {
+    // En Expo Go las push notifications no funcionan desde SDK 53.
+    // Salimos silenciosamente — no es un error de la app.
+    const isExpoGo = typeof __DEV__ !== 'undefined' && !process.env.EXPO_PUBLIC_PROJECT_ID;
+    if (isExpoGo) {
+      console.log('[Notifications] Expo Go detectado — push tokens omitidos en desarrollo.');
+      return;
+    }
+
     // Configurar canal en Android (requerido para Android 8+)
     if (Platform.OS === 'android') {
       await ExpoNotifications.setNotificationChannelAsync('default', {

@@ -26,9 +26,8 @@ import {
 
 export function useDashboardStats() {
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: QueryKeys.admin.pendingKyc,   // Reutilizamos la key de admin
+    queryKey: QueryKeys.admin.stats,
     queryFn:  fetchDashboardStats,
-    // Refrescar cada 30 segundos — el admin necesita datos frescos
     refetchInterval: 30 * 1000,
     staleTime: 15 * 1000,
   });

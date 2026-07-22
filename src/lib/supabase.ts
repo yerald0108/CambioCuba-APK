@@ -25,27 +25,51 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Supabase requiere un storage adapter compatible con la API de AsyncStorage.
 // Usamos SecureStore de Expo para mayor seguridad.
 
+const CHUNK_SIZE = 1800; // Bytes seguros por debajo del límite de 2048
+
 const ExpoSecureStoreAdapter = {
-  /**
-   * Obtiene un valor guardado de forma segura.
-   * SecureStore tiene un límite de 2048 bytes por clave,
-   * por eso fragmentamos los tokens largos.
-   */
   getItem: async (key: string): Promise<string | null> => {
     try {
+      // Intentar leer el valor directamente
       const value = await SecureStore.getItemAsync(key);
-      return value;
+      if (value !== null) return value;
+
+      // Si no existe, puede estar fragmentado — buscar chunks
+      const chunks: string[] = [];
+      let i = 0;
+      while (true) {
+        const chunk = await SecureStore.getItemAsync(`${key}.chunk_${i}`);
+        if (chunk === null) break;
+        chunks.push(chunk);
+        i++;
+      }
+      return chunks.length > 0 ? chunks.join('') : null;
     } catch {
-      // Si falla la lectura segura, retornamos null (sesión no encontrada)
       return null;
     }
   },
 
   setItem: async (key: string, value: string): Promise<void> => {
     try {
-      await SecureStore.setItemAsync(key, value);
+      if (value.length <= CHUNK_SIZE) {
+        // Valor pequeño — guardar directamente y limpiar chunks anteriores
+        await SecureStore.setItemAsync(key, value);
+        // Limpiar chunks viejos si existían
+        let i = 0;
+        while ((await SecureStore.getItemAsync(`${key}.chunk_${i}`)) !== null) {
+          await SecureStore.deleteItemAsync(`${key}.chunk_${i}`);
+          i++;
+        }
+      } else {
+        // Valor grande — fragmentar en chunks
+        await SecureStore.deleteItemAsync(key); // Limpiar el valor simple si existía
+        const totalChunks = Math.ceil(value.length / CHUNK_SIZE);
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          await SecureStore.setItemAsync(`${key}.chunk_${i}`, chunk);
+        }
+      }
     } catch {
-      // Si falla el guardado, el usuario tendrá que volver a iniciar sesión
       console.warn(`[SecureStore] No se pudo guardar la clave: ${key}`);
     }
   },
@@ -53,6 +77,14 @@ const ExpoSecureStoreAdapter = {
   removeItem: async (key: string): Promise<void> => {
     try {
       await SecureStore.deleteItemAsync(key);
+      // Limpiar chunks si existían
+      let i = 0;
+      while (true) {
+        const exists = await SecureStore.getItemAsync(`${key}.chunk_${i}`);
+        if (exists === null) break;
+        await SecureStore.deleteItemAsync(`${key}.chunk_${i}`);
+        i++;
+      }
     } catch {
       // Ignorar errores al eliminar
     }

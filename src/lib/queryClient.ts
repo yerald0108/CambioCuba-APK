@@ -54,8 +54,9 @@ export const QueryKeys = {
 
   // Admin
   admin: {
+    stats:      ['admin', 'stats'] as const,
     pendingKyc: ['admin', 'kyc', 'pending'] as const,
-    disputes: ['admin', 'disputes'] as const,
+    disputes:   ['admin', 'disputes'] as const,
     users: (page: number) => ['admin', 'users', page] as const,
   },
 } as const;
